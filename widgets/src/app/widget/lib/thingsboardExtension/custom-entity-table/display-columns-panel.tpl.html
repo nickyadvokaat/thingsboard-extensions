@@ -1,0 +1,11 @@
+<!--
+
+    Copyright © 2020 ThingsBoard
+
+-->
+<md-content style="height: 100%" flex layout="column" class="md-padding">
+    <label class="tb-title" translate>entity.columns-to-display</label>
+    <md-checkbox aria-label="{{ 'entity.columns-to-display' | translate }}" ng-repeat="column in vm.columns"
+                 ng-model="column.display">{{ column.title }}
+    </md-checkbox>
+</md-content>
