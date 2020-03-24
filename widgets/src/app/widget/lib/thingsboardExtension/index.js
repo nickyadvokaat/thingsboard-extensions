@@ -3,11 +3,13 @@
  */
 import thingsboardExtensionTypes from './thingsboard-extension-types.constant';
 import thingsboardExtensionConfig from './thingsboard-extension-config';
-import primatechEntityTable from './custom-entity-table/entities-table-widget';
+import primatechEntityTableNetworks from './custom-entity-table/entities-table-widget-networks';
+import primatechEntityTableEntityViews from './custom-entity-table/entities-table-widget-entity-views';
 
 export default angular.module('thingsboardExtension', [
         thingsboardExtensionTypes,
-        primatechEntityTable
+        primatechEntityTableNetworks,
+        primatechEntityTableEntityViews
     ])
     .config(thingsboardExtensionConfig)
     .name;

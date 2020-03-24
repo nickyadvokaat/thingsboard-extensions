@@ -15,8 +15,8 @@ import displayColumnsPanelTemplate from './display-columns-panel.tpl.html';
 import tinycolor from 'tinycolor2';
 import cssjs from '../../../../../vendor/css';
 
-export default angular.module('thingsboardExtension.primatechEntityTable', [])
-    .directive('primatechEntityTable', EntitiesTableWidget)
+export default angular.module('thingsboardExtension.primatechEntityTableEntityViews', [])
+    .directive('primatechEntityTableEntityViews', EntitiesTableWidget)
     .name;
 
 /*@ngInject*/
@@ -108,10 +108,11 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
             vm.subscription = vm.ctx.defaultSubscription;
             if(userService.getAuthority() === 'CUSTOMER_USER') {
                 userService.getUser(userService.getCurrentUser().userId).then((user) => {
-                    entityGroupService.getEntityGroups('ASSET', true).then((networks) => {
-                        for (let network of networks) {
-                            if (network.name.startsWith(user.email)) {
-                                entityService.getEntityGroupEntities(network.id.id, vm.query.limit, null, network.type).then((entities) => {
+                    entityGroupService.getEntityGroups('ENTITY_VIEW', true).then((entityViewGroups) => {
+                        console.log(entityViewGroups, 'entityViewGroups');//eslint-disable-line
+                        for (let entityViewGroup of entityViewGroups) {
+                            if (entityViewGroup.name.startsWith(user.id.id)) {
+                                entityService.getEntityGroupEntities(entityViewGroup.id.id, vm.query.limit, null, entityViewGroup.type).then((entities) => {
                                     let entitiesIds = [];
                                     for (let entity of entities) {
                                         entitiesIds.push(entity.id.id)
@@ -130,6 +131,7 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
                     })
                 })
             } else if (userService.getAuthority() === 'TENANT_ADMIN') {
+                console.log('to chto nado');//eslint-disable-line
                 vm.datasources = vm.subscription.datasources;
                 initializeConfig();
                 updateDatasources();
@@ -484,7 +486,7 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
             attachTo: angular.element($document[0].body),
             controller: DisplayColumnsPanelController,
             controllerAs: 'vm',
-            templateUrl: displayColumnsPanelTemplate,
+            template: displayColumnsPanelTemplate,
             panelClass: 'tb-display-columns-panel',
             position: position,
             fullscreen: false,
