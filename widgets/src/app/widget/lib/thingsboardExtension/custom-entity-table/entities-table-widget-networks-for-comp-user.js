@@ -1,8 +1,8 @@
 /*
  * Copyright © 2020 ThingsBoard
  */
-import './entities-table-widget.scss';
 import './display-columns-panel.scss';
+import './entities-table-widget.scss';
 
 /* eslint-disable import/no-unresolved, import/default */
 
@@ -15,12 +15,12 @@ import displayColumnsPanelTemplate from './display-columns-panel.tpl.html';
 import tinycolor from 'tinycolor2';
 import cssjs from '../../../../../vendor/css';
 
-export default angular.module('thingsboardExtension.primatechEntityTableEntityViews', [])
-    .directive('primatechEntityTableEntityViews', EntitiesTableWidget)
+export default angular.module('thingsboardExtension.primatechEntityTableNetworksForCompUser', [])
+    .directive('primatechEntityTableNetworksForCompUser', EntitiesTableWidgetNetworks)
     .name;
 
 /*@ngInject*/
-function EntitiesTableWidget() {
+function EntitiesTableWidgetNetworks() {
     return {
         restrict: "E",
         scope: true,
@@ -101,133 +101,91 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
 
     vm.editColumnsToDisplay = editColumnsToDisplay;
 
-    vm.subscriptionOptions = {
-        callbacks: {
-            onDataUpdated: onDataUpdated,
-            onDataUpdateError: () => {vm.dataLoading = false},
-            dataLoading: () => { }
-        }
-    };
-
     $scope.$watch('vm.ctx', function() {
-        vm.dataLoading = true;
-        // console.log(1);//eslint-disable-line
-        // if (vm.ctx && vm.ctx.defaultSubscription) {
-        //     vm.settings = vm.ctx.settings;
-        //     vm.widgetConfig = vm.ctx.widgetConfig;
-        //     vm.subscription = vm.ctx.defaultSubscription;
-        //     if(userService.getAuthority() === 'CUSTOMER_USER') {
-        //         userService.getUser(userService.getCurrentUser().userId).then((user) => {
-        //             entityGroupService.getEntityGroups('ENTITY_VIEW', true).then((entityViewGroups) => {
-        //                 for (let entityViewGroup of entityViewGroups) {
-        //                     if (entityViewGroup.name.startsWith(user.id.id)) {
-        //                         entityGroupService.getEntityGroupEntities(entityViewGroup.id.id, {limit: 1000}).then((entities) => {
-        //                             let entitiesIds = [];
-        //                             entities.data.forEach(entity => entitiesIds.push(entity.id.id));
-        //                             vm.datasources = vm.subscription.datasources.filter((entityView) => entitiesIds.includes(entityView.entityId));
-        //                             vm.fileteredData = vm.subscription.data.filter((entity) => entitiesIds.includes(entity.datasource.entityId));
-        //                             if(vm.datasources && vm.datasources.length) {
-        //                                 initializeConfig();
-        //                                 updateDatasources();
-        //                                 updateEntitiesData(vm.fileteredData);
-        //                                 updateEntities();
-        //                             } else {
-        //                                 // console.log(vm.allEntities, 'vm.allEntities');//eslint-disable-line
-        //                                 vm.datasources = [];
-        //                                 vm.allEntities = [];
-        //                                 vm.fileteredData = [];
-        //                                 // updateDatasources();
-        //                                 initializeConfig();
-        //                                 updateEntitiesData(vm.fileteredData);
-        //                                 updateEntities();
-        //                             }
-        //                         })
-        //                     }
-        //                 }
-        //             })
-        //         })
-        //     } else if (userService.getAuthority() === 'TENANT_ADMIN') {
-        //         vm.datasources = vm.subscription.datasources;
-        //         initializeConfig();
-        //         updateDatasources();
-        //         updateEntities();
-        //     }
-        // }
-        // console.log('subscription1');//eslint-disable-line
-        if (vm.ctx) {
-            vm.widgetConfig = vm.ctx.widgetConfig;
+        if (vm.ctx && vm.ctx.defaultSubscription) {
             vm.settings = vm.ctx.settings;
-            // console.log('subscription2');//eslint-disable-line
-            if(userService.getAuthority() === 'CUSTOMER_USER') {
-                // console.log('subscription3');//eslint-disable-line
-                userService.getUser(userService.getCurrentUser().userId).then((user) => {
-                    // console.log('subscription4');//eslint-disable-line
-                    entityGroupService.getEntityGroups('ENTITY_VIEW', true).then((entityViewGroups) => {
-                        // console.log(entityViewGroups, 'subscription45');//eslint-disable-line
-                        for (let entityViewGroup of entityViewGroups) {
-                            if (entityViewGroup.name.startsWith(user.id.id)) {
-                                entityGroupService.getEntityGroupEntities(entityViewGroup.id.id, {limit: 1000}).then((entities) => {
-                                    // console.log(entities, 'subscription6');//eslint-disable-line
-                                    let subscriptionsInfo = [];
-                                    entities.data.forEach(entity => subscriptionsInfo.push(subscribeForValue(entity)));
-                                    vm.ctx.subscriptionApi.createSubscriptionFromInfo (
-                                        'latest', subscriptionsInfo, vm.subscriptionOptions, false, true).then(
-                                        function(subscription) {
-                                            vm.dataLoading = false;
-                                            vm.subscription = subscription;
-                                            // console.log(subscription , 'subscription');//eslint-disable-line
-                                            vm.datasources = vm.subscription.datasources;
-                                            initializeConfig();
-                                            updateDatasources();
-                                            updateEntitiesData(vm.subscription.data);
-                                            updateEntities();
-                                        }
-                                    );
-                                })
-                            }
+            vm.widgetConfig = vm.ctx.widgetConfig;
+            vm.subscription = vm.ctx.defaultSubscription;
+            if(userService.getAuthority() === 'CUSTOMER_USER' && vm.ctx.dashboard.stateController.getEntityId()) {
+                entityGroupService.getEntityGroups('ASSET', true).then((networks) => {
+                    for (let network of networks) {
+                        if (network.name.startsWith(vm.ctx.dashboard.stateController.getEntityId().id)) {
+                            entityGroupService.getEntityGroupEntities(network.id.id, {limit: 1000}).then((entities) => {
+                                let entitiesIds = [];
+                                entities.data.forEach(entity => entitiesIds.push(entity.id.id));
+                                vm.datasources = vm.subscription.datasources.filter(network => entitiesIds.includes(network.entityId));
+                                // vm.fileteredData = vm.subscription.data;
+                                // vm.fileteredData = vm.fileteredData.filter((entity) => entitiesIds.includes(entity.datasource.entityId));
+                                vm.fileteredData = vm.subscription.data.filter((entity) => entitiesIds.includes(entity.datasource.entityId));
+                                if(vm.datasources && vm.datasources.length) {
+                                    initializeConfig();
+                                    updateDatasources();
+                                    updateEntitiesData(vm.fileteredData);
+                                    updateEntities();
+                                } else {
+                                    vm.datasources = [];
+                                    vm.allEntities = [];
+                                    initializeConfig();
+                                    updateEntities();
+                                }
+                            })
                         }
-                    })
+                    }
                 })
+            } else if (userService.getAuthority() === 'TENANT_ADMIN' || userService.getAuthority() === 'CUSTOMER_USER') {
+                // console.log(1, vm.subscription, vm.fileteredData ,'vm.subscription, vm.fileteredData');//eslint-disable-line
+                vm.datasources = vm.subscription.datasources;
+                initializeConfig();
+                updateEntitiesData(vm.subscription.data);
+                updateDatasources();
+                updateEntities();
             }
         }
     });
 
-    function subscribeForValue(entity) {
-        let subscriptionInfo = {
-            type: 'entity',
-            entityType: 'ENTITY_VIEW',
-            entityId: entity.id.id
-        };
-
-
-        subscriptionInfo.attributes = [
-            {
-                name: 'active',
-                label: 'Status'
-            },
-            {
-                name: 'MACAddress',
-                label: 'MAC Address'
+    $scope.$watch('vm.ctx.dashboard.stateController.getEntityId()', function() {
+        if (vm.ctx && vm.ctx.defaultSubscription) {
+            vm.settings = vm.ctx.settings;
+            vm.widgetConfig = vm.ctx.widgetConfig;
+            vm.subscription = vm.ctx.defaultSubscription;
+            if (userService.getAuthority() === 'CUSTOMER_USER' && vm.ctx.dashboard.stateController.getEntityId()) {
+                entityGroupService.getEntityGroups('ASSET', true).then((networks) => {
+                    for (let network of networks) {
+                        if (network.name.startsWith(vm.ctx.dashboard.stateController.getEntityId().id)) {
+                            entityGroupService.getEntityGroupEntities(network.id.id, {limit: 1000}).then((entities) => {
+                                let entitiesIds = [];
+                                entities.data.forEach(entity => entitiesIds.push(entity.id.id));
+                                vm.datasources = vm.subscription.datasources.filter(network => entitiesIds.includes(network.entityId));
+                                vm.fileteredData = vm.subscription.data.filter((entity) => entitiesIds.includes(entity.datasource.entityId));
+                                // vm.fileteredData = vm.subscription.data;
+                                // vm.fileteredData = vm.fileteredData.filter((entity) => entitiesIds.includes(entity.datasource.entityId));
+                                if(vm.datasources && vm.datasources.length) {
+                                    initializeConfig();
+                                    updateDatasources();
+                                    updateEntitiesData(vm.fileteredData);
+                                    updateEntities();
+                                } else {
+                                    vm.datasources = [];
+                                    vm.allEntities = [];
+                                    initializeConfig();
+                                    updateEntitiesData(vm.fileteredData);
+                                    updateEntities();
+                                }
+                            })
+                        }
+                    }
+                })
             }
-        ];
-
-        subscriptionInfo.timeseries = [
-            {
-                name: 'presence',
-                label: 'Presence'
+            else if (userService.getAuthority() === 'TENANT_ADMIN' || userService.getAuthority() === 'CUSTOMER_USER') {
+                // console.log(2, vm.subscription, vm.fileteredData ,'vm.subscription, vm.fileteredData');//eslint-disable-line
+                vm.datasources = vm.subscription.datasources;
+                initializeConfig();
+                updateDatasources();
+                updateEntitiesData(vm.subscription.data);
+                updateEntities();
             }
-        ];
-
-        return subscriptionInfo;
-    }
-
-    function onDataUpdated(/*subscription, apply*/) {
-        // console.log(subscription, 'subscription', apply, 'apply');//eslint-disable-line
-        vm.dataLoading = false;
-        updateEntitiesData(vm.subscription.data);
-        updateEntities();
-        $scope.$digest();
-    }
+        }
+    });
 
     $scope.$watch("vm.query.search", function(newVal, prevVal) {
         if (!angular.equals(newVal, prevVal) && vm.query.search != null) {
@@ -235,42 +193,46 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
         }
     });
 
-    function cellContent(entity, key) {
-        var strContent = '';
-        if (entity && key) {
-            var value = getEntityValue(entity, key);
-            if(angular.isDefined(value)) {
-                switch (key.name) {
-                    case 'active':
-                        if(value === 'true') {
-                            strContent = '' + '<span class="activeGreen">Active</span>';
-                        } else if(value === 'false') {
-                            strContent = '' + '<span class="activeRed">Inactive</span>';
-                        } else {
-                            strContent = '' + value;
-                        }
-                        break;
-                    case 'presence':
-                        if (value === 'N') {
-                            strContent = '' + '<span class="presenceNormal">Normal state</span>';
-                        } else if (value === 'F') {
-                            strContent = '' + '<span class="presenceFaults">Faults state</span>';
-                        } else if (value === 'A') {
-                            strContent = '' + '<span class="presenceAlarm">Alarm state</span>';
-                        } else {
-                            strContent = '' + value;
-                        }
-                        break;
-                    default:
-                        strContent = '' + value;
-                        break;
+    $scope.$on('entities-table-data-updated', function(event, tableId) {
+        // console.log(3, vm.subscription, vm.fileteredData ,'vm.subscription, vm.fileteredData');//eslint-disable-line
+        if (vm.tableId == tableId) {
+            if (vm.subscription) {
+                if(vm.datasources && vm.datasources.length) {
+                    // console.log(4,1);//eslint-disable-line
+                    if (vm.ctx.dashboard.stateController.getEntityId()) {
+                        updateEntitiesData(vm.fileteredData);
+                    } else {
+                        updateEntitiesData(vm.subscription.data);
+                    }
+                    updateEntities();
+                    updateDatasources();
+                    $scope.$digest();
+                } else {
+                    // console.log(4,2);//eslint-disable-line
+                    vm.allEntities = [];
+                    vm.datasources = [];
+                    updateEntitiesData(vm.fileteredData ? vm.fileteredData : []);
+                    updateEntities();
+                    $scope.$digest();
                 }
             }
-            return strContent;
-        } else {
-            return strContent;
         }
-    }
+        // if (vm.tableId == tableId) {
+        //     console.log(2, vm.subscription, vm.fileteredData ,'vm.subscription, vm.fileteredData');//eslint-disable-line
+        //     if (userService.getAuthority() === 'CUSTOMER_USER') {
+        //         updateEntitiesData(vm.fileteredData ? vm.fileteredData : []);
+        //         updateEntities();
+        //         $scope.$digest();
+        //     }
+        //     else {
+        //         if (vm.subscription) {
+        //             updateEntitiesData(vm.fileteredData ? vm.fileteredData : vm.subscription.data);
+        //             updateEntities();
+        //             $scope.$digest();
+        //         }
+        //     }
+        // }
+    });
 
     $scope.$watch(function() { return $mdMedia('gt-xs'); }, function(isGtXs) {
         vm.isGtXs = isGtXs;
@@ -473,7 +435,7 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
     }
 
     function updateEntities() {
-        if (vm.allEntities) {
+        if(vm.allEntities) {
             var result = $filter('orderBy')(vm.allEntities, vm.query.order);
             if (vm.query.search != null) {
                 result = $filter('filter')(result, {$: vm.query.search});
@@ -513,6 +475,32 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
             }
         }
         return style;
+    }
+
+    function cellContent(entity, key) {
+        var strContent = '';
+        if (entity && key) {
+            var contentInfo = vm.contentsInfo[key.label];
+            var value = getEntityValue(entity, key);
+            if (contentInfo.useCellContentFunction && contentInfo.cellContentFunction) {
+                if (angular.isDefined(value)) {
+                    strContent = '' + value;
+                }
+                var content = strContent;
+                try {
+                    content = contentInfo.cellContentFunction(value, entity, $filter);
+                } catch (e) {
+                    content = strContent;
+                }
+            } else {
+                var decimals = (contentInfo.decimals || contentInfo.decimals === 0) ? contentInfo.decimals : vm.widgetConfig.decimals;
+                var units = contentInfo.units || vm.widgetConfig.units;
+                content = vm.ctx.utils.formatValue(value, decimals, units, true);
+            }
+            return content;
+        } else {
+            return strContent;
+        }
     }
 
     function defaultStyle(/*key, value*/) {
@@ -570,6 +558,7 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
     }
 
     function editColumnsToDisplay($event) {
+        // console.log(vm.columns,'vm.columns');//eslint-disable-line
         var element = angular.element($event.target);
         var position = $mdPanel.newPanelPosition()
             .relativeTo(element)
@@ -594,7 +583,6 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
     }
 
     function updateDatasources() {
-
         vm.stylesInfo = {};
         vm.contentsInfo = {};
         vm.columnWidth = {};
@@ -662,66 +650,65 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
             };
             vm.columnWidth['entityType'] = '0px';
         }
-        if (datasource) {
-            for (var d = 0; d < datasource.dataKeys.length; d++) {
-                dataKey = angular.copy(datasource.dataKeys[d]);
-                if (dataKey.type == types.dataKeyType.function) {
-                    dataKey.name = dataKey.label;
-                }
-                vm.dataKeys.push(dataKey);
 
-                dataKey.title = utils.customTranslation(dataKey.label, dataKey.label);
-
-                var keySettings = dataKey.settings;
-
-                var cellStyleFunction = null;
-                var useCellStyleFunction = false;
-
-                if (keySettings.useCellStyleFunction === true) {
-                    if (angular.isDefined(keySettings.cellStyleFunction) && keySettings.cellStyleFunction.length > 0) {
-                        try {
-                            cellStyleFunction = new Function('value', keySettings.cellStyleFunction);
-                            useCellStyleFunction = true;
-                        } catch (e) {
-                            cellStyleFunction = null;
-                            useCellStyleFunction = false;
-                        }
-                    }
-                }
-
-                vm.stylesInfo[dataKey.label] = {
-                    useCellStyleFunction: useCellStyleFunction,
-                    cellStyleFunction: cellStyleFunction
-                };
-
-                var cellContentFunction = null;
-                var useCellContentFunction = false;
-
-                if (keySettings.useCellContentFunction === true) {
-                    if (angular.isDefined(keySettings.cellContentFunction) && keySettings.cellContentFunction.length > 0) {
-                        try {
-                            cellContentFunction = new Function('value, entity, filter', keySettings.cellContentFunction);
-                            useCellContentFunction = true;
-                        } catch (e) {
-                            cellContentFunction = null;
-                            useCellContentFunction = false;
-                        }
-                    }
-                }
-
-                vm.contentsInfo[dataKey.label] = {
-                    useCellContentFunction: useCellContentFunction,
-                    cellContentFunction: cellContentFunction,
-                    units: dataKey.units,
-                    decimals: dataKey.decimals
-                };
-
-                var columnWidth = angular.isDefined(keySettings.columnWidth) ? keySettings.columnWidth : '0px';
-                vm.columnWidth[dataKey.label] = columnWidth;
-
-                dataKey.display = true;
-                vm.columns.push(dataKey);
+        for (var d = 0; d < datasource.dataKeys.length; d++ ) {
+            dataKey = angular.copy(datasource.dataKeys[d]);
+            if (dataKey.type == types.dataKeyType.function) {
+                dataKey.name = dataKey.label;
             }
+            vm.dataKeys.push(dataKey);
+
+            dataKey.title = utils.customTranslation(dataKey.label, dataKey.label);
+
+            var keySettings = dataKey.settings;
+
+            var cellStyleFunction = null;
+            var useCellStyleFunction = false;
+
+            if (keySettings.useCellStyleFunction === true) {
+                if (angular.isDefined(keySettings.cellStyleFunction) && keySettings.cellStyleFunction.length > 0) {
+                    try {
+                        cellStyleFunction = new Function('value', keySettings.cellStyleFunction);
+                        useCellStyleFunction = true;
+                    } catch (e) {
+                        cellStyleFunction = null;
+                        useCellStyleFunction = false;
+                    }
+                }
+            }
+
+            vm.stylesInfo[dataKey.label] = {
+                useCellStyleFunction: useCellStyleFunction,
+                cellStyleFunction: cellStyleFunction
+            };
+
+            var cellContentFunction = null;
+            var useCellContentFunction = false;
+
+            if (keySettings.useCellContentFunction === true) {
+                if (angular.isDefined(keySettings.cellContentFunction) && keySettings.cellContentFunction.length > 0) {
+                    try {
+                        cellContentFunction = new Function('value, entity, filter', keySettings.cellContentFunction);
+                        useCellContentFunction = true;
+                    } catch (e) {
+                        cellContentFunction = null;
+                        useCellContentFunction = false;
+                    }
+                }
+            }
+
+            vm.contentsInfo[dataKey.label] = {
+                useCellContentFunction: useCellContentFunction,
+                cellContentFunction: cellContentFunction,
+                units: dataKey.units,
+                decimals: dataKey.decimals
+            };
+
+            var columnWidth = angular.isDefined(keySettings.columnWidth) ? keySettings.columnWidth : '0px';
+            vm.columnWidth[dataKey.label] = columnWidth;
+
+            dataKey.display = true;
+            vm.columns.push(dataKey);
         }
 
         for (var i=0;i<vm.datasources.length;i++) {

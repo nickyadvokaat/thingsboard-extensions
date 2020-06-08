@@ -1,8 +1,8 @@
 /*
  * Copyright © 2020 ThingsBoard
  */
-import './entities-table-widget.scss';
 import './display-columns-panel.scss';
+import './entities-table-widget.scss';
 
 /* eslint-disable import/no-unresolved, import/default */
 
@@ -35,7 +35,7 @@ function EntitiesTableWidgetNetworks() {
 }
 
 /*@ngInject*/
-function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdPanel, $document, $translate, $timeout, utils, types, entityGroupService, userService, entityService) {
+function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdPanel, $document, $translate, $timeout, utils, types, entityGroupService, userService) {
     var vm = this;
 
     vm.stylesInfo = {};
@@ -107,27 +107,30 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
             vm.widgetConfig = vm.ctx.widgetConfig;
             vm.subscription = vm.ctx.defaultSubscription;
             if(userService.getAuthority() === 'CUSTOMER_USER') {
-                userService.getUser(userService.getCurrentUser().userId).then((user) => {
-                    entityGroupService.getEntityGroups('ASSET', true).then((networks) => {
-                        for (let network of networks) {
-                            if (network.name.startsWith(user.id.id)) {
-                                entityService.getEntityGroupEntities(network.id.id, vm.query.limit, null, network.type).then((entities) => {
-                                    let entitiesIds = [];
-                                    for (let entity of entities) {
-                                        entitiesIds.push(entity.id.id)
-                                    }
-                                    vm.subscription.datasources = vm.subscription.datasources.filter((datasource) => {
-                                        return entitiesIds.includes(datasource.entity.id.id)
-                                    });
-                                    vm.datasources = vm.subscription.datasources;
-                                    console.log(vm.datasources, 'datasources', vm.subscription.datasources, 'ids:' ,entitiesIds);//eslint-disable-line
+                entityGroupService.getEntityGroups('ASSET', true).then((networks) => {
+                    for (let network of networks) {
+                        if (network.name.startsWith(userService.getCurrentUser().userId)) {
+                            entityGroupService.getEntityGroupEntities(network.id.id, {limit: 1000}).then((entities) => {
+                                let entitiesIds = [];
+                                entities.data.forEach(entity => entitiesIds.push(entity.id.id));
+                                vm.datasources = vm.subscription.datasources.filter(network => entitiesIds.includes(network.entityId));
+                                vm.fileteredData = vm.subscription.data.filter((entity) => entitiesIds.includes(entity.datasource.entityId));
+                                if(vm.datasources && vm.datasources.length) {
                                     initializeConfig();
                                     updateDatasources();
+                                    updateEntitiesData(vm.fileteredData);
                                     updateEntities();
-                                })
-                            }
+                                } else {
+                                    vm.datasources = [];
+                                    vm.allEntities = [];
+                                    initializeConfig();
+                                    updateEntitiesData(vm.fileteredData);
+                                    updateEntities();
+                                }
+
+                            })
                         }
-                    })
+                    }
                 })
             } else if (userService.getAuthority() === 'TENANT_ADMIN') {
                 vm.datasources = vm.subscription.datasources;
@@ -138,6 +141,7 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
         }
     });
 
+
     $scope.$watch("vm.query.search", function(newVal, prevVal) {
         if (!angular.equals(newVal, prevVal) && vm.query.search != null) {
             updateEntities();
@@ -146,10 +150,18 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
 
     $scope.$on('entities-table-data-updated', function(event, tableId) {
         if (vm.tableId == tableId) {
-            if (vm.subscription) {
-                updateEntitiesData(vm.subscription.data);
+            // console.log(2, vm.subscription, vm.fileteredData ,'vm.subscription, vm.fileteredData');//eslint-disable-line
+            if (userService.getAuthority() === 'CUSTOMER_USER') {
+                updateEntitiesData(vm.fileteredData ? vm.fileteredData : []);
                 updateEntities();
                 $scope.$digest();
+            }
+            else {
+                if (vm.subscription) {
+                    updateEntitiesData(vm.fileteredData ? vm.fileteredData : vm.subscription.data);
+                    updateEntities();
+                    $scope.$digest();
+                }
             }
         }
     });
@@ -211,9 +223,9 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
         if (vm.settings.defaultSortOrder && vm.settings.defaultSortOrder.length) {
             vm.defaultSortOrder = vm.settings.defaultSortOrder;
             if (vm.settings.defaultSortOrder.charAt(0) === "-") {
-                vm.defaultSortOrder = "-'" + vm.settings.defaultSortOrder.substring(1) + "'";
+                vm.defaultSortOrder = '-"' + utils.customTranslation(vm.settings.defaultSortOrder.substring(1), vm.settings.defaultSortOrder.substring(1)) + '"';
             } else {
-                vm.defaultSortOrder = "'" + vm.settings.defaultSortOrder + "'";
+                vm.defaultSortOrder = '"' + utils.customTranslation(vm.settings.defaultSortOrder, vm.settings.defaultSortOrder) + '"';
             }
         }
 
@@ -355,17 +367,19 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
     }
 
     function updateEntities() {
-        var result = $filter('orderBy')(vm.allEntities, vm.query.order);
-        if (vm.query.search != null) {
-            result = $filter('filter')(result, {$: vm.query.search});
-        }
-        vm.entitiesCount = result.length;
+        if(vm.allEntities) {
+            var result = $filter('orderBy')(vm.allEntities, vm.query.order);
+            if (vm.query.search != null) {
+                result = $filter('filter')(result, {$: vm.query.search});
+            }
+            vm.entitiesCount = result.length;
 
-        if (vm.displayPagination) {
-            var startIndex = vm.query.limit * (vm.query.page - 1);
-            vm.entities = result.slice(startIndex, startIndex + vm.query.limit);
-        } else {
-            vm.entities = result;
+            if (vm.displayPagination) {
+                var startIndex = vm.query.limit * (vm.query.page - 1);
+                vm.entities = result.slice(startIndex, startIndex + vm.query.limit);
+            } else {
+                vm.entities = result;
+            }
         }
     }
 
@@ -512,7 +526,6 @@ function EntitiesTableWidgetController($element, $scope, $filter, $mdMedia, $mdP
         var dataKey;
 
         datasource = vm.datasources[0];
-        console.log(datasource, 'update');//eslint-disable-line
 
         vm.ctx.widgetTitle = utils.createLabelFromDatasource(datasource, vm.entitiesTitle);
 

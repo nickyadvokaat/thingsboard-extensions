@@ -29,7 +29,7 @@
             <table md-table>
                 <thead fix-head md-head md-order="vm.query.order" md-on-reorder="vm.onReorder">
                 <tr md-row>
-                    <th ng-if="column.display" md-column md-order-by="'{{ column.label }}'" ng-repeat="column in vm.columns"><span>{{ column.title }}</span></th>
+                    <th ng-if="column.display" md-column md-order-by='"{{column.label}}"' ng-repeat="column in vm.columns"><span>{{ column.title }}</span></th>
                     <th md-column class="tb-action-cell" layout="row" layout-align="end center"></th>
                 </tr>
                 </thead>
@@ -58,7 +58,10 @@
                 </tbody>
             </table>
             <md-divider></md-divider>
-            <span ng-show="!vm.entities.length"
+<!--            <div layout="row" layout-sm="column" layout-align="space-around" ng-show="vm.dataLoading">-->
+            <md-progress-circular md-mode="indeterminate" ng-show="vm.dataLoading"></md-progress-circular >
+<!--            </div>-->
+            <span ng-show="!vm.entities.length && !vm.dataLoading"
                   layout-align="center center"
                   class="no-data-found" translate>entity.no-entities-prompt</span>
         </md-table-container>

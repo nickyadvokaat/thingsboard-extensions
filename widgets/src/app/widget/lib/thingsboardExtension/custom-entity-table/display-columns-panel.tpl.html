@@ -4,8 +4,12 @@
 
 -->
 <md-content style="height: 100%" flex layout="column" class="md-padding">
-    <label class="tb-title" translate>entity.columns-to-display</label>
-    <md-checkbox aria-label="{{ 'entity.columns-to-display' | translate }}" ng-repeat="column in vm.columns"
+<!--    <label class="tb-title" translate>entity.columns-to-display</label>-->
+    <label class="tb-title" translate>Columns to display</label>
+<!--    <md-checkbox aria-label="{{ 'entity.columns-to-display' | translate }}" ng-repeat="column in vm.columns"-->
+<!--                 ng-model="column.display">{{ column.title }}-->
+<!--    </md-checkbox>-->
+    <md-checkbox aria-label="columns to display" ng-repeat="column in vm.columns"
                  ng-model="column.display">{{ column.title }}
     </md-checkbox>
 </md-content>
