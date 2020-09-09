@@ -4,11 +4,13 @@
 /*@ngInject*/
 export default function SchedulerEventDialogController($rootScope, $scope, $mdDialog, schedulerEventService, types,
                                                        configTypesList, isAdd, readonly, schedulerEvent, defaultEventType,
-                                                       entityViewService) {
+                                                       entityViewService, entityRelationService, ctx) {
                                                            
     var vm = this;
 
     vm.types = types;
+
+    vm.ctx = ctx;
 
     vm.defaultTimezone = moment.tz.guess(); //eslint-disable-line
 
@@ -208,16 +210,36 @@ export default function SchedulerEventDialogController($rootScope, $scope, $mdDi
         }
         vm.schedulerEvent.schedule.startTime = dateTimeToUtcTime(vm.startDate);
         vm.schedulerEvent.name = vm.schedulerEvent.type;
-        entityViewService.getUserEntityViews({limit:1}).then((res) => {
-            vm.schedulerEvent.configuration.originatorId = res.data[0].id;
-            vm.schedulerEvent.configuration.metadata = {
-                deviceId: res.data[0].entityId.id
-            };
-            schedulerEventService.saveSchedulerEvent(vm.schedulerEvent).then(
-                () => {
+        if(vm.ctx.datasources[0].entityId) {
+            entityRelationService.findByFrom(vm.ctx.datasources[0].entityId, vm.ctx.datasources[0].entityType).then((relations) => {
+                if(!relations.length){
                     $mdDialog.hide();
                 }
-            );
-        })
+                vm.schedulerEvent.configuration.originatorId = relations[0].to;
+                vm.schedulerEvent.configuration.metadata = {
+                    deviceId: vm.ctx.datasources[0].entityId
+                };
+                schedulerEventService.saveSchedulerEvent(vm.schedulerEvent).then(
+                    () => {
+                        $mdDialog.hide();
+                    }
+                );
+            })
+        } else {
+            entityViewService.getUserEntityViews({limit:1}).then((res) => {
+                if(!res.data.length){
+                    $mdDialog.hide();
+                }
+                vm.schedulerEvent.configuration.originatorId = res.data[0].id;
+                vm.schedulerEvent.configuration.metadata = {
+                    deviceId: res.data[0].entityId.id
+                };
+                schedulerEventService.saveSchedulerEvent(vm.schedulerEvent).then(
+                    () => {
+                        $mdDialog.hide();
+                    }
+                );
+            })
+        }
     }
 }

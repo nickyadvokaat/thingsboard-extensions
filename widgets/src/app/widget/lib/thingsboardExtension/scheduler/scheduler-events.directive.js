@@ -622,7 +622,8 @@ function SchedulerEventsController($scope, $element, $compile, $q, $mdDialog, $m
                   isAdd: isAdd,
                   readonly: readonly,
                   schedulerEvent: schedulerEvent,
-                  defaultEventType: vm.defaultEventType
+                  defaultEventType: vm.defaultEventType,
+                  ctx: vm.ctx
               },
               targetEvent: $event,
               fullscreen: true,
