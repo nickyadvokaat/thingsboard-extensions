@@ -700,6 +700,7 @@ function SchedulerEventsController($scope, $element, $compile, $q, $mdDialog, $m
         vm.schedulerEventsPromise = schedulerEventService.getSchedulerEvents(vm.defaultEventType, vm.displayCustomer);
         vm.schedulerEventsPromise.then(
             function success(allSchedulerEvents) {
+                const tasks  = [];
                 allSchedulerEvents.forEach(
                     (schedulerEvent) => {
                         var typeName = schedulerEvent.type;
@@ -713,9 +714,36 @@ function SchedulerEventsController($scope, $element, $compile, $q, $mdDialog, $m
                 vm.allSchedulerEvents = allSchedulerEvents.filter(event=>{
                   return user.customerId === event.customerId.id
                 });
-                vm.selectedSchedulerEvents = [];
-                vm.updateSchedulerEvents();
-                vm.schedulerEventsPromise = null;
+                vm.allSchedulerEvents.forEach(
+                    (schedulerEvent) => {
+                        tasks.push(schedulerEventService.getSchedulerEvent(schedulerEvent.id.id))
+                    }
+                );
+                $q.all(tasks).then(
+                    function success(allSchedulerEvents) {
+                        allSchedulerEvents.forEach(
+                            (schedulerEvent) => {
+                                var typeName = schedulerEvent.type;
+                                if (vm.configTypes[typeName]) {
+                                    typeName = vm.configTypes[typeName].name;
+                                }
+                                schedulerEvent.typeName = typeName;
+                            }
+                        );
+                        vm.allSchedulerEvents = allSchedulerEvents.filter(event => {
+                            return vm.ctx.datasources[0].entityId === event.configuration.metadata.deviceId
+                        });
+                        vm.selectedSchedulerEvents = [];
+                        vm.updateSchedulerEvents();
+                        vm.schedulerEventsPromise = null;
+                    },
+                    function fail() {
+                        vm.allSchedulerEvents = [];
+                        vm.selectedSchedulerEvents = [];
+                        vm.updateSchedulerEvents();
+                        vm.schedulerEventsPromise = null;
+                    }
+                )
             },
             function fail() {
                 vm.allSchedulerEvents = [];

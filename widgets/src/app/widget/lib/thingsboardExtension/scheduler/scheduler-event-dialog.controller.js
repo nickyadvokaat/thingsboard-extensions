@@ -212,7 +212,7 @@ export default function SchedulerEventDialogController($rootScope, $scope, $mdDi
         vm.schedulerEvent.name = vm.schedulerEvent.type;
         if(vm.ctx.datasources[0].entityId) {
             entityRelationService.findByFrom(vm.ctx.datasources[0].entityId, vm.ctx.datasources[0].entityType).then((relations) => {
-                if(!relations.length){
+                if(!relations.length || !relations[0] || !relations[0].to){
                     $mdDialog.hide();
                 }
                 vm.schedulerEvent.configuration.originatorId = relations[0].to;
